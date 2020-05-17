@@ -1,0 +1,55 @@
+import librosa
+import numpy as np
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn import svm
+import logging
+
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
+    
+def Mfcc_Vectors(filename):      
+    y, sr = librosa.load(filename,sr=None)
+    
+    v=librosa.feature.mfcc(y=y, sr=sr)    
+    vector=np.pad(v,((0,0),(0,500-v.shape[1])),'constant')    
+    return vector
+    
+    
+path0 = "E:/output/0"
+path1 = "E:/output/1"
+
+files0= os.listdir(path0)
+files1= os.listdir(path1)
+
+
+def Mfcc_set(files,path):
+    line=[]
+    for file in files:
+        if not os.path.isdir(file):
+
+        
+            line.append(Mfcc_Vectors(path+"/"+file))
+           
+       
+    line=np.array(line)
+    print(line.shape)
+    
+    return line
+set0=Mfcc_set(files0,path0)
+set1=Mfcc_set(files1,path1)
+train=np.vstack((set0,set1))
+tag_0=np.zeros(set0.shape[0])
+tag_1=np.ones(set1.shape[0])
+train_tag= np.append(tag_0,tag_1)
+
+X_train, X_test, y_train, y_test = train_test_split(np.array(train, dtype='float64'),
+                                                        np.array(train_tag, dtype='float64'), test_size=0.30,
+                                                        random_state=0)
+#clf = svm.SVC()  # 使用RBF核
+clf = svm.LinearSVC()
+print("开始训练")
+clf_res=clf.fit(X_train, y_train)
+test_pred = clf_res.predict(X_test)
+print(classification_report(y_test, test_pred))
